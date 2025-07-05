@@ -4,7 +4,7 @@ const API_CONFIG = {
   BASE_URL: (() => {
     // Check if we're in production (deployed on Vercel)
     if (window.location.hostname === 'travel-planner-weld-gamma.vercel.app') {
-      return 'https://my-backend-h171.onrender.com';
+      return 'https://travelplan-backend.onrender.com';
     }
     // Check if we're on localhost
     else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -12,7 +12,7 @@ const API_CONFIG = {
     }
     // Default to production backend
     else {
-      return 'https://my-backend-h171.onrender.com';
+      return 'https://travelplan-backend.onrender.com';
     }
   })(),
   
