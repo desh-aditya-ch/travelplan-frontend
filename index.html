@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Travel Planner</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@3.7.3/dist/full.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Meta tags for deployment -->
+  <meta name="description" content="AI-powered travel planning application">
+  <meta name="author" content="AI Travel Planner">
+  <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈️</text></svg>">
+</head>
+<body>
+  <!-- Authentication Modal -->
+  <div id="auth-modal" class="auth-modal hidden">
+    <div class="card bg-base-100 shadow-2xl w-full max-w-md mx-4">
+      <div class="card-body">
+        <div class="tabs tabs-boxed mb-4">
+          <a class="tab tab-active" id="login-tab">Login</a>
+          <a class="tab" id="register-tab">Register</a>
+        </div>
+        
+        <!-- Login Form -->
+        <form id="login-form" class="space-y-4">
+          <h2 class="card-title text-2xl">Welcome Back!</h2>
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Email</span>
+            </label>
+            <input type="email" id="login-email" placeholder="Enter your email" class="input input-bordered" required />
+          </div>
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Password</span>
+            </label>
+            <input type="password" id="login-password" placeholder="Enter your password" class="input input-bordered" required />
+          </div>
+          <div class="form-control mt-6">
+            <button type="submit" class="btn btn-primary">Login</button>
+          </div>
+        </form>
+        
+        <!-- Register Form -->
+        <form id="register-form" class="space-y-4 hidden">
+          <h2 class="card-title text-2xl">Create Account</h2>
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Full Name</span>
+            </label>
+            <input type="text" id="register-fullname" placeholder="Enter your full name" class="input input-bordered" required />
+          </div>
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Username</span>
+            </label>
+            <input type="text" id="register-username" placeholder="Choose a username" class="input input-bordered" required />
+          </div>
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Email</span>
+            </label>
+            <input type="email" id="register-email" placeholder="Enter your email" class="input input-bordered" required />
+          </div>
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Password</span>
+            </label>
+            <input type="password" id="register-password" placeholder="Create a password" class="input input-bordered" required />
+          </div>
+          <div class="form-control mt-6">
+            <button type="submit" class="btn btn-primary">Register</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div id="notification" class="notification hidden">
+    <div class="alert">
+      <span id="notification-text"></span>
+    </div>
+  </div>
+
+  <div class="drawer">
+    <input id="main-drawer" type="checkbox" class="drawer-toggle" />
+    <div class="drawer-content">
+      <!-- Enhanced Navbar -->
+      <div class="navbar bg-base-100 shadow-lg sticky top-0 z-50">
+        <div class="flex-1">
+          <label for="main-drawer" class="btn btn-square btn-ghost drawer-button lg:hidden">
+            <i class="fas fa-bars"></i>
+          </label>
+          <a class="btn btn-ghost normal-case text-xl cursor-pointer" onclick="navigateToHome()">
+            <i class="fas fa-plane-departure mr-2 text-primary"></i>
+            AI Travel Planner
+          </a>
+        </div>
+        
+        <!-- Desktop Navigation Menu -->
+        <div class="flex-none hidden lg:flex">
+          <ul class="menu menu-horizontal px-1">
+            <li><a class="nav-button" onclick="navigateToHome()"><i class="fas fa-home mr-2"></i>Home</a></li>
+            <li id="nav-plan-trip" class="hidden"><a class="nav-button" onclick="navigateToPlanTrip()"><i class="fas fa-map mr-2"></i>Plan Trip</a></li>
+            <li id="nav-saved-trips" class="hidden"><a class="nav-button" onclick="navigateToSavedTrips()"><i class="fas fa-bookmark mr-2"></i>Saved Trips</a></li>
+          </ul>
+        </div>
+        
+        <div class="flex-none gap-2">
+          <div id="user-menu" class="dropdown dropdown-end hidden">
+            <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+              <div class="w-10 rounded-full bg-primary text-primary-content flex items-center justify-center">
+                <i class="fas fa-user"></i>
+              </div>
+            </label>
+            <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
+              <li><a id="profile-link"><i class="fas fa-user mr-2"></i>Profile</a></li>
+              <li><a onclick="navigateToSavedTrips()"><i class="fas fa-bookmark mr-2"></i>Saved Trips</a></li>
+              <li><a onclick="navigateToPlanTrip()"><i class="fas fa-plus mr-2"></i>New Trip</a></li>
+              <li><hr class="my-1"></li>
+              <li><a id="logout-btn"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a></li>
+            </ul>
+          </div>
+          <button id="login-btn" class="btn btn-primary btn-sm">
+            <i class="fas fa-sign-in-alt mr-1"></i>
+            Login
+          </button>
+          <label class="swap swap-rotate">
+            <input type="checkbox" id="theme-toggle" />
+            <i class="fas fa-sun swap-on text-xl"></i>
+            <i class="fas fa-moon swap-off text-xl"></i>
+          </label>
+        </div>
+      </div>
+
+      <!-- Breadcrumb Navigation -->
+      <div id="breadcrumb-nav" class="breadcrumb-nav mx-4 mt-4 hidden">
+        <div class="breadcrumbs text-sm">
+          <ul id="breadcrumb-list">
+            <!-- Breadcrumbs will be generated here -->
+          </ul>
+        </div>
+      </div>
+      
+      <main class="container mx-auto px-4 py-8">
+        <!-- Welcome Section -->
+        <div id="welcome-section" class="section-transition">
+          <div class="hero min-h-[90vh] gradient-bg rounded-box mb-8 relative overflow-hidden">
+            <div class="absolute inset-0 overflow-hidden opacity-20">
+              <div class="absolute top-10 left-5 w-20 h-20 rounded-full bg-white animate-bounce"></div>
+              <div class="absolute top-40 right-10 w-32 h-32 rounded-full bg-white animate-pulse"></div>
+              <div class="absolute bottom-20 left-1/4 w-24 h-24 rounded-full bg-white animate-bounce"></div>
+            </div>
+            
+            <div class="hero-content text-center text-white z-10">
+              <div class="max-w-4xl">
+                <h1 class="text-6xl font-bold mb-4 animate-fade-in">AI Travel Planner</h1>
+                <p class="text-xl mb-8 animate-fade-in-delay">Create personalized itineraries with our intelligent AI assistant. Discover amazing destinations, plan perfect trips, and make unforgettable memories.</p>
+                <button class="btn btn-lg bg-white text-blue-700 hover:bg-blue-100 border-none card-hover" id="get-started-btn">
+                  <i class="fas fa-rocket mr-2"></i>
+                  Start Planning Your Journey
+                </button>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+                  <div class="glass-effect p-6 rounded-box card-hover">
+                    <i class="fas fa-bolt text-4xl mb-3 text-yellow-300"></i>
+                    <h3 class="text-xl font-bold mb-2">AI-Powered</h3>
+                    <p>Smart recommendations tailored to your preferences</p>
+                  </div>
+                  <div class="glass-effect p-6 rounded-box card-hover">
+                    <i class="fas fa-rupee-sign text-4xl mb-3 text-green-300"></i>
+                    <h3 class="text-xl font-bold mb-2">Budget Smart</h3>
+                    <p>Plan within your budget with accurate cost estimates</p>
+                  </div>
+                  <div class="glass-effect p-6 rounded-box card-hover">
+                    <i class="fas fa-download text-4xl mb-3 text-blue-300"></i>
+                    <h3 class="text-xl font-bold mb-2">Download & Save</h3>
+                    <p>Get PDF itineraries and save your favorite trips</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions for Logged-in Users -->
+          <div id="quick-actions" class="hidden">
+            <h2 class="text-3xl font-bold mb-6 text-center">Quick Actions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div class="quick-action-card p-6 rounded-box cursor-pointer" onclick="navigateToPlanTrip()">
+                <div class="text-center">
+                  <i class="fas fa-plus-circle text-4xl text-primary mb-4"></i>
+                  <h3 class="text-xl font-bold mb-2">Plan New Trip</h3>
+                  <p class="text-gray-600">Start planning your next adventure with AI assistance</p>
+                </div>
+              </div>
+              
+              <div class="quick-action-card p-6 rounded-box cursor-pointer" onclick="navigateToSavedTrips()">
+                <div class="text-center">
+                  <i class="fas fa-bookmark text-4xl text-secondary mb-4"></i>
+                  <h3 class="text-xl font-bold mb-2">View Saved Trips</h3>
+                  <p class="text-gray-600">Access your saved itineraries and travel plans</p>
+                </div>
+              </div>
+              
+              <div class="quick-action-card p-6 rounded-box cursor-pointer" onclick="showUserStats()">
+                <div class="text-center">
+                  <i class="fas fa-chart-line text-4xl text-accent mb-4"></i>
+                  <h3 class="text-xl font-bold mb-2">Travel Stats</h3>
+                  <p class="text-gray-600">View your travel planning statistics</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preferences Form -->
+        <div id="preferences-section" class="section-transition hidden">
+          <!-- Back Navigation -->
+          <div class="mb-6">
+            <button class="btn btn-outline btn-sm" onclick="navigateToHome()">
+              <i class="fas fa-arrow-left mr-2"></i>
+              Back to Home
+            </button>
+          </div>
+
+          <h2 class="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Plan Your Perfect Adventure</h2>
+          
+          <div class="card bg-base-100 shadow-2xl border border-gray-100 card-hover">
+            <div class="card-body p-8">
+              <form id="preferences-form">
+                <div class="steps steps-horizontal w-full mb-8">
+                  <div class="step step-primary">Destination</div>
+                  <div class="step">Dates & Budget</div>
+                  <div class="step">Preferences</div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-lg">
+                        <i class="fas fa-map-marker-alt text-primary mr-2"></i>
+                        Destination
+                      </span>
+                    </label>
+                    <input type="text" id="destination" placeholder="Where do you want to go?" class="input input-bordered input-lg focus:input-primary" required />
+                  </div>
+                  
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-lg">
+                        <i class="fas fa-home text-primary mr-2"></i>
+                        Starting From
+                      </span>
+                    </label>
+                    <input type="text" id="origin" placeholder="Your departure city" class="input input-bordered input-lg focus:input-primary" required />
+                  </div>
+                  
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-lg">
+                        <i class="fas fa-calendar-alt text-primary mr-2"></i>
+                        Start Date
+                      </span>
+                    </label>
+                    <input type="date" id="start-date" class="input input-bordered input-lg focus:input-primary" required />
+                  </div>
+                  
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-lg">
+                        <i class="fas fa-calendar-check text-primary mr-2"></i>
+                        End Date
+                      </span>
+                    </label>
+                    <input type="date" id="end-date" class="input input-bordered input-lg focus:input-primary" required />
+                  </div>
+                  
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-lg">
+                        <i class="fas fa-rupee-sign text-primary mr-2"></i>
+                        Budget (INR)
+                      </span>
+                    </label>
+                    <input type="number" id="budget" placeholder="Enter your total budget" class="input input-bordered input-lg focus:input-primary" required />
+                  </div>
+                  
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-lg">
+                        <i class="fas fa-users text-primary mr-2"></i>
+                        Travelers
+                      </span>
+                    </label>
+                    <input type="number" id="travelers" class="input input-bordered input-lg focus:input-primary" min="1" value="1" required />
+                  </div>
+                  
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-lg">
+                        <i class="fas fa-hotel text-primary mr-2"></i>
+                        Accommodation
+                      </span>
+                    </label>
+                    <select id="accommodation-type" class="select select-bordered select-lg focus:select-primary">
+                      <option value="Budget">Budget</option>
+                      <option value="Mid-range">Mid-range</option>
+                      <option value="Luxury">Luxury</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-lg">
+                        <i class="fas fa-car text-primary mr-2"></i>
+                        Transportation
+                      </span>
+                    </label>
+                    <select id="transportation-type" class="select select-bordered select-lg focus:select-primary">
+                      <option value="Public Transport">Public Transport</option>
+                      <option value="Rental Car">Rental Car</option>
+                      <option value="Taxi/Rideshare">Taxi/Rideshare</option>
+                      <option value="Walking">Walking</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="form-control mt-8">
+                  <label class="label">
+                    <span class="label-text font-semibold text-lg">
+                      <i class="fas fa-heart text-primary mr-2"></i>
+                      What interests you?
+                    </span>
+                  </label>
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                    <label class="flex items-center space-x-3 cursor-pointer p-4 bg-base-200 rounded-box hover:bg-primary hover:text-primary-content transition-all duration-300 card-hover">
+                      <input type="checkbox" class="checkbox checkbox-primary interest-checkbox" value="History" />
+                      <span class="font-medium">History</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer p-4 bg-base-200 rounded-box hover:bg-primary hover:text-primary-content transition-all duration-300 card-hover">
+                      <input type="checkbox" class="checkbox checkbox-primary interest-checkbox" value="Nature" />
+                      <span class="font-medium">Nature</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer p-4 bg-base-200 rounded-box hover:bg-primary hover:text-primary-content transition-all duration-300 card-hover">
+                      <input type="checkbox" class="checkbox checkbox-primary interest-checkbox" value="Food" />
+                      <span class="font-medium">Food</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer p-4 bg-base-200 rounded-box hover:bg-primary hover:text-primary-content transition-all duration-300 card-hover">
+                      <input type="checkbox" class="checkbox checkbox-primary interest-checkbox" value="Art" />
+                      <span class="font-medium">Art</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer p-4 bg-base-200 rounded-box hover:bg-primary hover:text-primary-content transition-all duration-300 card-hover">
+                      <input type="checkbox" class="checkbox checkbox-primary interest-checkbox" value="Adventure" />
+                      <span class="font-medium">Adventure</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer p-4 bg-base-200 rounded-box hover:bg-primary hover:text-primary-content transition-all duration-300 card-hover">
+                      <input type="checkbox" class="checkbox checkbox-primary interest-checkbox" value="Shopping" />
+                      <span class="font-medium">Shopping</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer p-4 bg-base-200 rounded-box hover:bg-primary hover:text-primary-content transition-all duration-300 card-hover">
+                      <input type="checkbox" class="checkbox checkbox-primary interest-checkbox" value="Nightlife" />
+                      <span class="font-medium">Nightlife</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer p-4 bg-base-200 rounded-box hover:bg-primary hover:text-primary-content transition-all duration-300 card-hover">
+                      <input type="checkbox" class="checkbox checkbox-primary interest-checkbox" value="Relaxation" />
+                      <span class="font-medium">Relaxation</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div class="form-control mt-8">
+                  <button type="submit" class="btn btn-primary btn-lg w-full text-lg card-hover">
+                    <i class="fas fa-magic mr-2"></i>
+                    Generate My Perfect Itinerary
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Loading Section -->
+        <div id="loading-section" class="section-transition hidden">
+          <div class="flex flex-col items-center justify-center min-h-[60vh]">
+            <div class="loading-spinner mb-6"></div>
+            <h2 class="text-3xl font-bold mb-4 text-center">✨ Creating Your Perfect Trip ✨</h2>
+            <p class="text-center text-lg max-w-2xl">Our AI is analyzing thousands of possibilities to craft the perfect itinerary just for you. This magic takes a moment...</p>
+            <div class="mt-8 flex space-x-2">
+              <div class="w-3 h-3 bg-primary rounded-full animate-bounce"></div>
+              <div class="w-3 h-3 bg-primary rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+              <div class="w-3 h-3 bg-primary rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="results-section" class="section-transition hidden">
+          <!-- Enhanced Navigation Header -->
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div class="flex items-center gap-4">
+              <button class="btn btn-outline btn-sm" onclick="navigateToPlanTrip()">
+                <i class="fas fa-arrow-left mr-2"></i>
+                New Trip
+              </button>
+              <h2 class="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Your Dream Itinerary</h2>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button class="btn btn-outline btn-sm card-hover" id="edit-preferences-btn">
+                <i class="fas fa-edit mr-1"></i>
+                Edit
+              </button>
+              <button class="btn btn-success btn-sm card-hover" id="save-itinerary-btn">
+                <i class="fas fa-bookmark mr-1"></i>
+                Save Trip
+              </button>
+              <button class="btn btn-primary btn-sm card-hover" id="download-pdf-btn">
+                <i class="fas fa-download mr-1"></i>
+                Download PDF
+              </button>
+              <button class="btn btn-info btn-sm card-hover" onclick="navigateToHome()">
+                <i class="fas fa-home mr-1"></i>
+                Home
+              </button>
+            </div>
+          </div>
+          
+          <!-- Itinerary Overview -->
+          <div class="card bg-gradient-to-r from-primary to-secondary text-primary-content shadow-2xl mb-8 card-hover">
+            <div class="card-body">
+              <h3 class="card-title text-2xl mb-4">
+                <i class="fas fa-globe mr-2"></i>
+                Trip Overview
+              </h3>
+              <div class="stats stats-vertical lg:stats-horizontal shadow-lg">
+                <div class="stat bg-base-100 text-base-content">
+                  <div class="stat-figure text-primary">
+                    <i class="fas fa-map-marker-alt text-2xl"></i>
+                  </div>
+                  <div class="stat-title">Destination</div>
+                  <div class="stat-value text-lg" id="destination-value">-</div>
+                </div>
+                <div class="stat bg-base-100 text-base-content">
+                  <div class="stat-figure text-secondary">
+                    <i class="fas fa-clock text-2xl"></i>
+                  </div>
+                  <div class="stat-title">Duration</div>
+                  <div class="stat-value text-lg" id="duration-value">-</div>
+                </div>
+                <div class="stat bg-base-100 text-base-content">
+                  <div class="stat-figure text-accent">
+                    <i class="fas fa-calendar text-2xl"></i>
+                  </div>
+                  <div class="stat-title">Dates</div>
+                  <div class="stat-value text-sm" id="dates-value">-</div>
+                </div>
+                <div class="stat bg-base-100 text-base-content">
+                  <div class="stat-figure text-success">
+                    <i class="fas fa-rupee-sign text-2xl"></i>
+                  </div>
+                  <div class="stat-title">Total Budget</div>
+                  <div class="stat-value text-lg" id="budget-value">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tabs -->
+         <div class="tabs tabs-boxed mb-6 bg-base-200 p-1">
+           <a class="tab tab-active text-lg" id="itinerary-tab">
+             <i class="fas fa-calendar-days mr-2"></i>
+             Itinerary
+           </a>
+           <a class="tab text-lg" id="flights-tab">
+             <i class="fas fa-plane mr-2"></i>
+             Flights
+           </a>
+           <a class="tab text-lg" id="accommodations-tab">
+             <i class="fas fa-hotel mr-2"></i>
+             Hotels
+           </a>
+           <a class="tab text-lg" id="activities-tab">
+             <i class="fas fa-list-check mr-2"></i>
+             Activities
+           </a>
+         </div>
+         
+         <!-- Tab Contents -->
+         <div id="itinerary-content" class="tab-content">
+           <div id="day-buttons" class="flex flex-wrap gap-2 mb-6">
+             <!-- Day buttons will be generated here -->
+           </div>
+           <div id="itinerary-days">
+             <!-- Itinerary days will be generated here -->
+           </div>
+         </div>
+         
+         <div id="flights-content" class="tab-content hidden">
+           <div class="card bg-base-100 shadow-xl mb-6 card-hover">
+             <div class="card-body">
+               <h3 class="card-title text-2xl mb-4">
+                 <i class="fas fa-plane-departure mr-2 text-primary"></i>
+                 Flight Options
+               </h3>
+               <div id="flights-container" class="space-y-4">
+                 <!-- Flight cards will be generated here -->
+               </div>
+             </div>
+           </div>
+         </div>
+         
+         <div id="accommodations-content" class="tab-content hidden">
+           <div class="card bg-base-100 shadow-xl mb-6 card-hover">
+             <div class="card-body">
+               <h3 class="card-title text-2xl mb-4">
+                 <i class="fas fa-bed mr-2 text-primary"></i>
+                 Accommodation Options
+               </h3>
+               <div id="accommodations-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <!-- Accommodation cards will be generated here -->
+               </div>
+             </div>
+           </div>
+         </div>
+         
+         <div id="activities-content" class="tab-content hidden">
+           <div class="card bg-base-100 shadow-xl mb-6 card-hover">
+             <div class="card-body">
+               <h3 class="card-title text-2xl mb-4">
+                 <i class="fas fa-star mr-2 text-primary"></i>
+                 Recommended Activities
+               </h3>
+               <div id="activities-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <!-- Activity cards will be generated here -->
+               </div>
+             </div>
+           </div>
+         </div>
+         
+         <!-- Tips Section -->
+         <div class="card bg-base-100 shadow-xl mt-8 card-hover">
+           <div class="card-body">
+             <h3 class="card-title text-2xl">
+               <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>
+               Local Tips & Insights
+             </h3>
+             <ul id="tips-list" class="space-y-2 mt-4">
+               <!-- Tips will be generated here -->
+             </ul>
+           </div>
+         </div>
+       </div>
+
+       <!-- Saved Trips Section -->
+       <div id="saved-trips-section" class="section-transition hidden">
+         <!-- Enhanced Navigation Header -->
+         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+           <div class="flex items-center gap-4">
+             <button class="btn btn-outline btn-sm" onclick="navigateToHome()">
+               <i class="fas fa-arrow-left mr-2"></i>
+               Back to Home
+             </button>
+             <h2 class="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Your Saved Adventures</h2>
+           </div>
+           <div class="flex flex-wrap gap-2">
+             <button class="btn btn-primary btn-sm card-hover" onclick="navigateToPlanTrip()">
+               <i class="fas fa-plus mr-1"></i>
+               Plan New Trip
+             </button>
+             <button class="btn btn-info btn-sm card-hover" onclick="showUserStats()">
+              <i class="fas fa-chart-line mr-1"></i>
+              View Stats
+            </button>
+          </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="card bg-base-100 shadow-lg mb-6">
+          <div class="card-body p-4">
+            <div class="flex flex-col md:flex-row gap-4">
+              <div class="form-control flex-1">
+                <input type="text" id="trip-search" placeholder="Search your trips..." class="input input-bordered" />
+              </div>
+              <div class="form-control">
+                <select id="trip-filter" class="select select-bordered">
+                  <option value="">All Trips</option>
+                  <option value="draft">Draft</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <button class="btn btn-outline" onclick="loadSavedTrips()">
+                <i class="fas fa-refresh mr-1"></i>
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="saved-trips-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Saved trips will be generated here -->
+        </div>
+      </div>
+
+      <!-- User Stats Section -->
+      <div id="user-stats-section" class="section-transition hidden">
+        <!-- Navigation Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div class="flex items-center gap-4">
+            <button class="btn btn-outline btn-sm" onclick="navigateToHome()">
+              <i class="fas fa-arrow-left mr-2"></i>
+              Back to Home
+            </button>
+            <h2 class="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Your Travel Statistics</h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button class="btn btn-primary btn-sm card-hover" onclick="navigateToPlanTrip()">
+              <i class="fas fa-plus mr-1"></i>
+              Plan New Trip
+            </button>
+            <button class="btn btn-secondary btn-sm card-hover" onclick="navigateToSavedTrips()">
+              <i class="fas fa-bookmark mr-1"></i>
+              View Trips
+            </button>
+          </div>
+        </div>
+
+        <div id="user-stats-container">
+          <!-- Stats will be loaded here -->
+        </div>
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="footer p-10 bg-base-200 text-base-content">
+      <div>
+        <span class="footer-title">Company</span>
+        <a class="link link-hover">About us</a>
+        <a class="link link-hover">Contact</a>
+        <a class="link link-hover">Privacy Policy</a>
+        <a class="link link-hover">Terms of Service</a>
+      </div>
+      <div>
+        <span class="footer-title">Features</span>
+        <a class="link link-hover">AI Itineraries</a>
+        <a class="link link-hover">PDF Downloads</a>
+        <a class="link link-hover">Trip Saving</a>
+        <a class="link link-hover">Smart Recommendations</a>
+      </div>
+      <div>
+        <span class="footer-title">Quick Links</span>
+        <a class="link link-hover cursor-pointer" onclick="navigateToHome()">Home</a>
+        <a class="link link-hover cursor-pointer" onclick="navigateToPlanTrip()">Plan Trip</a>
+        <a class="link link-hover cursor-pointer" onclick="navigateToSavedTrips()">Saved Trips</a>
+      </div>
+      <div>
+        <span class="footer-title">Social</span>
+        <div class="grid grid-flow-col gap-4">
+          <a class="text-2xl hover:text-primary transition-colors"><i class="fab fa-twitter"></i></a>
+          <a class="text-2xl hover:text-primary transition-colors"><i class="fab fa-facebook"></i></a>
+          <a class="text-2xl hover:text-primary transition-colors"><i class="fab fa-instagram"></i></a>
+          <a class="text-2xl hover:text-primary transition-colors"><i class="fab fa-linkedin"></i></a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Enhanced Sidebar -->
+  <div class="drawer-side">
+    <label for="main-drawer" class="drawer-overlay"></label>
+    <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
+      <li class="mb-4">
+        <h2 class="text-2xl font-bold">Navigation</h2>
+      </li>
+      <li><a onclick="navigateToHome(); closeDrawer();"><i class="fas fa-home mr-2"></i>Home</a></li>
+      <li id="sidebar-plan-trip" class="hidden"><a onclick="navigateToPlanTrip(); closeDrawer();"><i class="fas fa-map mr-2"></i>Plan New Trip</a></li>
+      <li id="sidebar-saved-trips" class="hidden"><a onclick="navigateToSavedTrips(); closeDrawer();"><i class="fas fa-bookmark mr-2"></i>Saved Trips</a></li>
+      <li id="sidebar-user-stats" class="hidden"><a onclick="showUserStats(); closeDrawer();"><i class="fas fa-chart-line mr-2"></i>Travel Stats</a></li>
+      <li><hr class="my-2"></li>
+      <li><a onclick="toggleTheme(); closeDrawer();"><i class="fas fa-palette mr-2"></i>Toggle Theme</a></li>
+      <li><a href="#" onclick="showHelp(); closeDrawer();"><i class="fas fa-question-circle mr-2"></i>Help & Support</a></li>
+    </ul>
+  </div>
+</div>
+
+<!-- Floating Action Button -->
+<div class="floating-action">
+  <div class="dropdown dropdown-top dropdown-end">
+    <label tabindex="0" class="btn btn-circle btn-primary shadow-lg card-hover">
+      <i class="fas fa-plus"></i>
+    </label>
+    <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 mb-2">
+      <li><a onclick="navigateToPlanTrip()"><i class="fas fa-map mr-2"></i>Plan New Trip</a></li>
+      <li><a onclick="navigateToSavedTrips()"><i class="fas fa-bookmark mr-2"></i>View Saved Trips</a></li>
+      <li><a onclick="scrollToTop()"><i class="fas fa-arrow-up mr-2"></i>Scroll to Top</a></li>
+    </ul>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="config.js"></script>
+<script src="index.js"></script>
+</body>
+</html>
